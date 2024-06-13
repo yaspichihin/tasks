@@ -1,28 +1,12 @@
-import { ADD_TASK, DEL_TASK, TOGGLE_TASK } from "./tasks-consts";
+import { createAction, nanoid } from "@reduxjs/toolkit";
 
-export function addTask(title) {
-  return {
-    type: ADD_TASK,
-    payload: {
-      title,
-    },
-  };
-}
+export const addTask = createAction("@@tasks/ADD_TASK", (title) => ({
+  payload: {
+    id: nanoid(),
+    title,
+    completed: false,
+  },
+}));
 
-export function delTask(taskId) {
-  return {
-    type: DEL_TASK,
-    payload: {
-      taskId,
-    },
-  };
-}
-
-export function toggleTask(taskId) {
-  return {
-    type: TOGGLE_TASK,
-    payload: {
-      taskId,
-    },
-  };
-}
+export const delTask = createAction("@@tasks/DEL_TASK");
+export const toggleTask = createAction("@@tasks/TOGGLE_TASK");

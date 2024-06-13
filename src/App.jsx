@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 
 import { addTask, delTask, toggleTask } from "./store/tasks/tasks-actions";
-import { getAllTasks, getCompletedTasks, getActiveTasks } from "./store/tasks/tasks-selectors";
+import { getActiveTasks } from "./store/tasks/tasks-selectors";
 
 export function App() {
   return (

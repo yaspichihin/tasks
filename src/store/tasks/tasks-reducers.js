@@ -1,24 +1,20 @@
-import { ADD_TASK, DEL_TASK, TOGGLE_TASK } from "./tasks-consts";
+import { addTask, delTask, toggleTask } from "./tasks-actions";
 
 export function tasksReducer(state = [], action) {
   switch (action.type) {
-    case ADD_TASK: {
-      const newTask = {
-        id: Date.now(),
-        title: action.payload.title,
-        completed: false,
-      };
-      return [...state, newTask];
+    case addTask.toString(): {
+      return [...state, { ...action.payload }];
     }
-    case DEL_TASK: {
-      return state.filter((task) => task.id !== action.payload.taskId);
+    case delTask.toString(): {
+      return state.filter((task) => task.id !== action.payload);
     }
-    case TOGGLE_TASK: {
+    case toggleTask.toString(): {
       return state.map((task) =>
-        task.id === action.payload.taskId ? { ...task, completed: !task.completed } : task
+        task.id === action.payload ? { ...task, completed: !task.completed } : task
       );
     }
     default: {
+      console.log(action.type);
       return state;
     }
   }
