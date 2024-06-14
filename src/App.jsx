@@ -1,53 +1,16 @@
-import { useSelector, useDispatch } from "react-redux";
-
-import { addTask, delTask, toggleTask } from "./store/tasks/tasks-actions";
-import { getActiveTasks } from "./store/tasks/tasks-selectors";
+import { NewTask } from "./features/Tasks/NewTask";
+import { Filter } from "./features/Filter/Filter";
+import { ResetApp } from "./features/Reset/ResetApp";
+import { TaskList } from "./features/Tasks/TaskList";
 
 export function App() {
   return (
     <div className="App">
       <h1>Redux Tasks</h1>
       <NewTask />
+      <Filter />
+      <ResetApp />
       <TaskList />
     </div>
-  );
-}
-
-function NewTask() {
-  const dispatch = useDispatch();
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    dispatch(addTask(event.target.title.value));
-    event.target.reset();
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input type="text" name="title" placeholder="New task" />
-      <input type="submit" value="Add Task" />
-    </form>
-  );
-}
-
-function TaskList() {
-  const dispatch = useDispatch();
-
-  const tasks = useSelector(getActiveTasks);
-
-  return (
-    <ul>
-      {tasks.map((task) => (
-        <li key={task.title}>
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={() => dispatch(toggleTask(task.id))}
-          />{" "}
-          {task.title}
-          <button onClick={() => dispatch(delTask(task.id))}>delete</button>
-        </li>
-      ))}
-    </ul>
   );
 }
