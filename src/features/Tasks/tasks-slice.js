@@ -1,5 +1,25 @@
-import { createSlice, nanoid } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { resetState } from "../Reset/reset-actions";
+
+export const createTask = createAsyncThunk("@@tasks/createTask", async (title, { dispatch }) => {
+  // Вызов preloader
+  dispatch({ type: "@@tasks/setLoading" });
+
+  // Отправка запроса создания задачи на backend
+  const result = await fetch("http://localhost:8000/tasks/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ title }),
+  });
+
+  // Парсинг ответа из json
+  const data = await result.json();
+
+  // Обновление состояния задач
+  dispatch(addTask(data));
+});
 
 // Slice
 export const tasksSlice = createSlice({
@@ -7,13 +27,6 @@ export const tasksSlice = createSlice({
   initialState: [],
   reducers: {
     addTask: {
-      prepare: (title) => ({
-        payload: {
-          id: nanoid(),
-          title,
-          completed: false,
-        },
-      }),
       reducer: (state, action) => {
         const newTask = action.payload;
         state.push(newTask);

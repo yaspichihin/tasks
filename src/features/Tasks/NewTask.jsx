@@ -1,13 +1,15 @@
 import { useDispatch } from "react-redux";
-import { addTask } from "./tasks-slice";
+import { createTask } from "./tasks-slice";
 
 export function NewTask() {
   const dispatch = useDispatch();
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    dispatch(addTask(event.target.title.value));
-    event.target.reset();
+    if (event.target.title.value) {
+      dispatch(createTask(event.target.title.value));
+      event.target.reset();
+    }
   };
 
   return (

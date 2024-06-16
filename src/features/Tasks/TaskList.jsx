@@ -14,10 +14,10 @@ export function TaskList() {
           <input
             type="checkbox"
             checked={task.completed}
-            onChange={() => dispatch(toggleTask(task.id))}
+            onChange={() => dispatch(toggleTask(task.uuid))}
           />{" "}
           {task.title}
-          <button onClick={() => dispatch(delTask(task.id))}>delete</button>
+          <button onClick={() => dispatch(delTask(task.uuid))}>delete</button>
         </li>
       ))}
     </ul>
