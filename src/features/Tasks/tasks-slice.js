@@ -1,11 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { resetState } from "../Reset/reset-actions";
 
-export const createTask = createAsyncThunk("@@tasks/createTask", async (title, { dispatch }) => {
-  // Вызов preloader
-  dispatch({ type: "@@tasks/setLoading" });
+// get tasks
+export const loadTasks = createAsyncThunk("tasks/load_tasks", async () => {
+  const result = await fetch("http://localhost:8000/tasks/", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const data = await result.json();
+  return data;
+});
 
-  // Отправка запроса создания задачи на backend
+// create task
+export const createTask = createAsyncThunk("task/create_task", async (title) => {
   const result = await fetch("http://localhost:8000/tasks/", {
     method: "POST",
     headers: {
@@ -13,43 +22,114 @@ export const createTask = createAsyncThunk("@@tasks/createTask", async (title, {
     },
     body: JSON.stringify({ title }),
   });
-
-  // Парсинг ответа из json
   const data = await result.json();
+  return data;
+});
 
-  // Обновление состояния задач
-  dispatch(addTask(data));
+// toggle task
+export const toggleTask = createAsyncThunk("task/toggle_task", async (uuid, { getState }) => {
+  const task = getState().tasks.entities.find((item) => item.uuid === uuid);
+
+  const result = await fetch("http://localhost:8000/tasks/" + uuid, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      uuid: task.uuid,
+      title: task.title,
+      completed: !task.completed,
+    }),
+  });
+
+  const data = await result.json();
+  return data;
+});
+
+// delete task
+export const deleteTask = createAsyncThunk("task/delete_task", async (uuid) => {
+  const result = await fetch("http://localhost:8000/tasks/" + uuid, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return uuid;
 });
 
 // Slice
 export const tasksSlice = createSlice({
-  name: "@@tasks",
-  initialState: [],
-  reducers: {
-    addTask: {
-      reducer: (state, action) => {
-        const newTask = action.payload;
-        state.push(newTask);
-      },
-    },
-    delTask: {
-      reducer: (state, action) => {
-        const id = action.payload;
-        return state.filter((task) => task.id !== id);
-      },
-    },
-    toggleTask: {
-      reducer: (state, action) => {
-        const id = action.payload;
-        const task = state.find((task) => task.id === id);
-        task.completed = !task.completed;
-      },
-    },
+  name: "tasks",
+  initialState: {
+    entities: [],
+    status: "idle", // 'pending', 'fulfilled', 'rejected
+    error: null,
   },
   extraReducers: (builder) => {
-    builder.addCase(resetState, () => {
-      return [];
-    });
+    builder
+      .addCase(resetState, () => {
+        return [];
+      })
+      // loadTasks
+      .addCase(loadTasks.pending, (state) => {
+        state.status = "pending";
+        state.error = null;
+      })
+      .addCase(loadTasks.rejected, (state) => {
+        state.status = "rejected";
+        state.error = "Error loading tasks";
+      })
+      .addCase(loadTasks.fulfilled, (state, action) => {
+        state.status = "fulfilled";
+        state.error = null;
+        state.entities = action.payload;
+      })
+      // createTask
+      .addCase(createTask.pending, (state) => {
+        state.status = "pending";
+        state.error = null;
+      })
+      .addCase(createTask.rejected, (state) => {
+        state.status = "rejected";
+        state.error = "Something went wrong";
+      })
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.status = "fulfilled";
+        state.error = null;
+        state.entities.push(action.payload);
+      })
+      // toggleTask
+      .addCase(toggleTask.pending, (state) => {
+        state.status = "pending";
+        state.error = null;
+      })
+      .addCase(toggleTask.rejected, (state) => {
+        state.status = "rejected";
+        state.error = "Error toggling task";
+      })
+      .addCase(toggleTask.fulfilled, (state, action) => {
+        state.status = "fulfilled";
+        state.error = null;
+
+        const updatedTask = action.payload;
+        const index = state.entities.findIndex((task) => task.uuid === updatedTask.uuid);
+        state.entities[index] = updatedTask;
+      })
+      // toggleTask
+      .addCase(deleteTask.pending, (state) => {
+        state.status = "pending";
+        state.error = null;
+      })
+      .addCase(deleteTask.rejected, (state) => {
+        state.status = "rejected";
+        state.error = "Error deleting task";
+      })
+      .addCase(deleteTask.fulfilled, (state, action) => {
+        state.status = "fulfilled";
+        state.error = null;
+
+        state.entities = state.entities.filter((task) => task.uuid !== action.payload);
+      });
   },
 });
 
@@ -57,18 +137,15 @@ export const tasksSlice = createSlice({
 export function getTasks(state, activeFilter) {
   switch (activeFilter) {
     case "all":
-      return state.tasks;
+      return state.tasks.entities;
     case "active":
-      return state.tasks.filter((task) => task.completed === false);
+      return state.tasks.entities.filter((task) => task.completed === false);
     case "completed":
-      return state.tasks.filter((task) => task.completed === true);
+      return state.tasks.entities.filter((task) => task.completed === true);
     default:
       return state;
   }
 }
-
-// Actions
-export const { addTask, delTask, toggleTask } = tasksSlice.actions;
 
 // Reducer
 export const tasksReducer = tasksSlice.reducer;

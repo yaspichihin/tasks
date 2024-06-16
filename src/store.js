@@ -1,5 +1,6 @@
+import { v4 } from "uuid";
 import logger from "redux-logger";
-import { configureStore, nanoid } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 
 import {
   persistStore,
@@ -38,7 +39,13 @@ export const store = configureStore({
         ignoreActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }).concat(logger),
-  preloadedState: { tasks: [{ id: nanoid(), title: "PreloadedTask", completed: false }] },
+  // preloadedState: {
+  //   tasks: {
+  //     status: "idle",
+  //     entities: [{ uuid: v4(), title: "PreloadedTask", completed: false }],
+  //     error: null,
+  //   },
+  // },
 });
 
 export const persistor = persistStore(store);
