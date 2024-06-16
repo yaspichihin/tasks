@@ -2,6 +2,8 @@ import uvicorn
 from uuid import uuid4, UUID
 from dataclasses import dataclass, field
 from fastapi import FastAPI, status, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -47,6 +49,14 @@ class STask(STaskBase):
 # api
 app = FastAPI()
 
+# cors
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get(
     path="/tasks/",
@@ -55,7 +65,6 @@ app = FastAPI()
 )
 async def get_tasks():
     return tasks
-
 
 @app.post(
     path="/tasks/",
