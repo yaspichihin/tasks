@@ -96,7 +96,6 @@ async def update_task(uuid: str, data: STaskUpdate):
 )
 async def update_task(uuid: str):
     for task in tasks:
-        print(task)
         if task["uuid"] == uuid:
             tasks.remove(task)
             return
