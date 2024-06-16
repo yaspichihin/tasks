@@ -8,10 +8,20 @@ from pydantic import BaseModel, ConfigDict
 # Storages
 tasks = [
     {
-        "uuid": "74f8c197-5e85-4788-8070-276ceccc0e25",
-        "title": "some task",
+        "uuid": "74f8c197-5e85-4788-8070-276ceccc0e21",
+        "title": "Task_1",
+        "completed": True,
+    },
+    {
+        "uuid": "74f8c197-5e85-4788-8070-276ceccc0e22",
+        "title": "Task_2",
         "completed": False,
-    }
+    },
+            {
+        "uuid": "74f8c197-5e85-4788-8070-276ceccc0e23",
+        "title": "Task_3",
+        "completed": False,
+    },
 ]
 
 
