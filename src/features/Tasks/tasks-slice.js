@@ -68,7 +68,11 @@ export const tasksSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(resetState, () => {
-        return [];
+        return {
+          entities: [],
+          status: "idle",
+          error: null,
+        };
       })
       // loadTasks
       .addCase(loadTasks.pending, (state) => {
