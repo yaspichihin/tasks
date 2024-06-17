@@ -1,153 +1,184 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createEntityAdapter } from "@reduxjs/toolkit";
 import { resetState } from "../Reset/reset-actions";
 
-// get tasks
-export const loadTasks = createAsyncThunk("tasks/load_tasks", async () => {
-  const result = await fetch("http://localhost:8000/tasks/", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  const data = await result.json();
-  return data;
+const tasksAdapter = createEntityAdapter({
+  // Указываем уникальный идентификатор сущностей
+  selectId: (task) => task.uuid,
 });
+
+// get tasks
+export const loadTasks = createAsyncThunk(
+  "tasks/load_tasks",
+  async (_, { rejectWithValue, extra: api }) => {
+    try {
+      return api.loadTasks();
+    } catch (err) {
+      // Возвращаем свою ошибку
+      return rejectWithValue("Error loading tasks");
+    }
+  },
+  {
+    // Если запрос выполняется, то не отправлять этот запрос
+    condition: (_, { getState }) => {
+      const { status } = getState().tasks;
+
+      if (status === "loading") {
+        return false;
+      }
+    },
+  }
+);
 
 // create task
-export const createTask = createAsyncThunk("task/create_task", async (title) => {
-  const result = await fetch("http://localhost:8000/tasks/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+export const createTask = createAsyncThunk(
+  "task/create_task",
+  async (title, { rejectWithValue, extra: api }) => {
+    try {
+      return api.createTask(title);
+    } catch (err) {
+      return rejectWithValue("Error create task");
+    }
+  },
+  {
+    // Если запрос выполняется, то не отправлять этот запрос
+    condition: (_, { getState }) => {
+      const { status } = getState().tasks;
+
+      if (status === "loading") {
+        return false;
+      }
     },
-    body: JSON.stringify({ title }),
-  });
-  const data = await result.json();
-  return data;
-});
+  }
+);
 
 // toggle task
-export const toggleTask = createAsyncThunk("task/toggle_task", async (uuid, { getState }) => {
-  const task = getState().tasks.entities.find((item) => item.uuid === uuid);
+export const toggleTask = createAsyncThunk(
+  "task/toggle_task",
+  async (uuid, { getState, rejectWithValue, extra: api }) => {
+    try {
+      const task = getState().tasks.entities[uuid];
 
-  const result = await fetch("http://localhost:8000/tasks/" + uuid, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
+      return api.toggleTask(uuid, task);
+    } catch (err) {
+      return rejectWithValue("Error toggling task");
+    }
+  },
+  {
+    // Если запрос выполняется, то не отправлять этот запрос
+    condition: (_, { getState }) => {
+      const { status } = getState().tasks;
+
+      if (status === "loading") {
+        return false;
+      }
     },
-    body: JSON.stringify({
-      uuid: task.uuid,
-      title: task.title,
-      completed: !task.completed,
-    }),
-  });
-
-  const data = await result.json();
-  return data;
-});
+  }
+);
 
 // delete task
-export const deleteTask = createAsyncThunk("task/delete_task", async (uuid) => {
-  const result = await fetch("http://localhost:8000/tasks/" + uuid, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
+export const deleteTask = createAsyncThunk(
+  "task/delete_task",
+  async (uuid, { rejectWithValue, extra: api }) => {
+    try {
+      return api.deleteTask(uuid);
+    } catch (err) {
+      return rejectWithValue("Error deleting task");
+    }
+  },
+  {
+    // Если запрос выполняется, то не отправлять этот запрос
+    condition: (_, { getState }) => {
+      const { status } = getState().tasks;
+
+      if (status === "loading") {
+        return false;
+      }
     },
-  });
-  return uuid;
-});
+  }
+);
 
 // Slice
 export const tasksSlice = createSlice({
   name: "tasks",
-  initialState: {
-    entities: [],
-    status: "idle", // 'pending', 'fulfilled', 'rejected
-    error: null,
-  },
+  initialState: tasksAdapter.getInitialState(
+    // entities по умолчанию определяется в адаптере
+    {
+      // Дополнительные параметры состояния
+      status: "idle", // 'pending', 'fulfilled', 'rejected
+      error: null,
+    }
+  ),
   extraReducers: (builder) => {
     builder
-      .addCase(resetState, () => {
-        return {
-          entities: [],
-          status: "idle",
-          error: null,
-        };
+      .addCase(resetState, (state) => {
+        tasksAdapter.removeAll(state);
+        state.status = "idle";
+        state.error = null
       })
       // loadTasks
-      .addCase(loadTasks.pending, (state) => {
-        state.status = "pending";
-        state.error = null;
-      })
-      .addCase(loadTasks.rejected, (state) => {
-        state.status = "rejected";
-        state.error = "Error loading tasks";
-      })
       .addCase(loadTasks.fulfilled, (state, action) => {
-        state.status = "fulfilled";
-        state.error = null;
-        state.entities = action.payload;
+        tasksAdapter.addMany(state, action.payload);
       })
       // createTask
-      .addCase(createTask.pending, (state) => {
-        state.status = "pending";
-        state.error = null;
-      })
-      .addCase(createTask.rejected, (state) => {
-        state.status = "rejected";
-        state.error = "Something went wrong";
-      })
       .addCase(createTask.fulfilled, (state, action) => {
-        state.status = "fulfilled";
-        state.error = null;
-        state.entities.push(action.payload);
+        tasksAdapter.addOne(state, action.payload);
       })
       // toggleTask
-      .addCase(toggleTask.pending, (state) => {
-        state.status = "pending";
-        state.error = null;
-      })
-      .addCase(toggleTask.rejected, (state) => {
-        state.status = "rejected";
-        state.error = "Error toggling task";
-      })
       .addCase(toggleTask.fulfilled, (state, action) => {
-        state.status = "fulfilled";
-        state.error = null;
-
         const updatedTask = action.payload;
-        const index = state.entities.findIndex((task) => task.uuid === updatedTask.uuid);
-        state.entities[index] = updatedTask;
+        tasksAdapter.updateOne(state, {
+          // Где меняем определяем через uuid
+          id: updatedTask.uuid,
+          // Что меняем
+          changes: {
+            completed: updatedTask.completed,
+          },
+        });
       })
-      // toggleTask
-      .addCase(deleteTask.pending, (state) => {
-        state.status = "pending";
-        state.error = null;
-      })
-      .addCase(deleteTask.rejected, (state) => {
-        state.status = "rejected";
-        state.error = "Error deleting task";
-      })
+      // deleteTask
       .addCase(deleteTask.fulfilled, (state, action) => {
-        state.status = "fulfilled";
-        state.error = null;
-
-        state.entities = state.entities.filter((task) => task.uuid !== action.payload);
-      });
+        const task_uuid = action.payload;
+        tasksAdapter.removeOne(state, task_uuid);
+      })
+      .addMatcher(
+        (action) => action.type.endsWith("/pending"),
+        (state) => {
+          state.status = "pending";
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/rejected"),
+        (state, action) => {
+          state.status = "rejected";
+          // Ошибку брать которую определили сами или из action.error.message;
+          state.error = action.payload || action.error.message;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/fulfilled"),
+        (state) => {
+          state.status = "fulfilled";
+          state.error = null;
+        }
+      );
   },
 });
 
-// Selectors
-export function getTasks(state, activeFilter) {
+// Basic selector
+export const tasksSelectors = tasksAdapter.getSelectors((state) => state.tasks);
+
+// extra logic
+export function selectVisibleTasks(tasks = [], activeFilter) {
   switch (activeFilter) {
     case "all":
-      return state.tasks.entities;
+      return tasks;
     case "active":
-      return state.tasks.entities.filter((task) => task.completed === false);
+      return tasks.filter((task) => task.completed === false);
     case "completed":
-      return state.tasks.entities.filter((task) => task.completed === true);
+      return tasks.filter((task) => task.completed === true);
     default:
-      return state;
+      return tasks;
   }
 }
 

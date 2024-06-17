@@ -18,6 +18,8 @@ import { combineReducers } from "@reduxjs/toolkit";
 import { tasksReducer } from "./features/Tasks/tasks-slice";
 import { filterReducer } from "./features/Filter/filter-slice";
 
+import * as api from "./api";
+
 const rootReducer = combineReducers({
   tasks: tasksReducer,
   filter: filterReducer,
@@ -38,14 +40,11 @@ export const store = configureStore({
       serializableCheck: {
         ignoreActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
+      // Передача экстра аргумента для thunk
+      thunk: {
+        extraArgument: api,
+      },
     }).concat(logger),
-  // preloadedState: {
-  //   tasks: {
-  //     status: "idle",
-  //     entities: [{ uuid: v4(), title: "PreloadedTask", completed: false }],
-  //     error: null,
-  //   },
-  // },
 });
 
 export const persistor = persistStore(store);
